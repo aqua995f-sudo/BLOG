@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>攝影器材管控台</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #17181A;
+    --panel: #1F2124;
+    --panel-2: #26282D;
+    --border: #34363B;
+    --text: #F2F0E9;
+    --muted: #8B8F94;
+    --muted-2: #5C5F65;
+    --red: #E8352B;
+    --red-dim: #4A2320;
+    --green: #3EA26C;
+    --green-dim: #1E3129;
+    --amber: #E0A238;
+    --amber-dim: #3D3120;
+    --grey-status: #6B6E73;
+    --grey-dim: #2C2E31;
+    --focus: #6FA8E0;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk', sans-serif;
+    min-height:100vh;
+    line-height:1.5;
+  }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+
+  button{font-family:inherit;}
+  input, select, textarea{
+    font-family:'IBM Plex Mono', monospace;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:3px;
+    padding:8px 10px;
+    font-size:13px;
+    outline:none;
+  }
+  input::placeholder, textarea::placeholder{ color:var(--muted-2); }
+  input:focus, select:focus, textarea:focus{ border-color:var(--focus); }
+  label{ display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  .field{ margin-bottom:12px; }
+
+  a{ color: var(--focus); }
+
+  /* ---------- Login ---------- */
+  #login-screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .login-box{
+    width:100%;
+    max-width:380px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:32px 28px;
+    position:relative;
+  }
+  .login-box::before{
+    content:"";
+    position:absolute;
+    top:0; left:0; right:0;
+    height:3px;
+    background:linear-gradient(90deg, var(--red) 0 33%, var(--amber) 33% 66%, var(--green) 66% 100%);
+    border-radius:4px 4px 0 0;
+  }
+  .login-tag{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12px; color:var(--muted); margin-bottom:18px;
+  }
+  .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .login-box h1{
+    font-size:22px; margin:0 0 6px 0; font-weight:600;
+  }
+  .login-box p.sub{
+    color:var(--muted); font-size:13px; margin:0 0 22px 0;
+  }
+  .login-box input{ width:100%; font-size:15px; padding:10px 12px; }
+  .login-box .note{
+    margin-top:16px; font-size:11.5px; color:var(--muted-2); line-height:1.6;
+  }
+  .btn{
+    border:1px solid var(--border);
+    background:var(--panel-2);
+    color:var(--text);
+    padding:9px 16px;
+    border-radius:3px;
+    font-size:13px;
+    cursor:pointer;
+    font-weight:500;
+  }
+  .btn:hover{ border-color:var(--muted); }
+  .btn-primary{
+    background:var(--red);
+    border-color:var(--red);
+    color:#fff;
+  }
+  .btn-primary:hover{ background:#d12a21; }
+  .btn-full{ width:100%; margin-top:18px; padding:11px; font-size:14px; }
+  .btn-ghost{ background:transparent; }
+  .btn-sm{ padding:5px 10px; font-size:12px; }
+
+  /* ---------- App shell ---------- */
+  #app-shell{ display:none; min-height:100vh; flex-direction:column; }
+  header.topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 24px;
+    border-bottom:1px solid var(--border);
+    background:var(--panel);
+    flex-wrap:wrap; gap:10px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand .dot{ width:9px; height:9px; }
+  .brand h1{ font-size:17px; font-weight:600; margin:0; }
+  .brand-sub{ font-size:11.5px; color:var(--muted-2); margin-top:1px; }
+  .user-chip{
+    display:flex; align-items:center; gap:10px;
+  }
+  .user-badge{
+    background:var(--panel-2); border:1px solid var(--border);
+    padding:6px 12px; border-radius:3px; font-size:13px;
+  }
+  .user-badge .mono{ color:var(--muted); font-size:11px; }
+
+  nav.tabs{
+    display:flex; gap:2px; padding:0 24px;
+    background:var(--panel); border-bottom:1px solid var(--border);
+    overflow-x:auto;
+  }
+  nav.tabs button{
+    background:transparent; border:none; color:var(--muted);
+    padding:13px 16px; font-size:13.5px; cursor:pointer;
+    border-bottom:3px solid transparent;
+    white-space:nowrap;
+    font-family:inherit; font-weight:500;
+  }
+  nav.tabs button.active{ color:var(--text); border-bottom-color:var(--red); }
+  nav.tabs button:hover{ color:var(--text); }
+
+  main{ flex:1; padding:24px; max-width:1180px; width:100%; margin:0 auto; }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--border);
+    border-radius:4px; padding:20px;
+  }
+  h2.section-title{ font-size:16px; font-weight:600; margin:0 0 16px 0; }
+
+  /* ---------- Dashboard ---------- */
+  .stat-grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px;
+  }
+  .stat-tile{
+    background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--muted-2);
+    border-radius:4px; padding:16px 18px;
+  }
+  .stat-tile.total{ border-left-color:var(--muted); }
+  .stat-tile.in-stock{ border-left-color:var(--green); }
+  .stat-tile.borrowed{ border-left-color:var(--red); }
+  .stat-tile.repair{ border-left-color:var(--amber); }
+  .stat-num{ font-family:'IBM Plex Mono', monospace; font-size:30px; font-weight:600; }
+  .stat-label{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+
+  .dash-cols{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+  .cat-bars{ display:flex; flex-direction:column; gap:10px; }
+  .cat-row{ display:flex; align-items:center; gap:10px; }
+  .cat-name{ width:110px; font-size:12.5px; color:var(--muted); flex-shrink:0; }
+  .cat-track{ flex:1; height:8px; background:var(--panel-2); border-radius:2px; overflow:hidden; }
+  .cat-fill{ height:100%; background:var(--focus); border-radius:2px; }
+  .cat-count{ width:28px; text-align:right; font-size:12.5px; }
+
+  .list-item{
+    border-left:3px solid var(--border);
+    padding:10px 12px; margin-bottom:8px; background:var(--panel-2); border-radius:0 3px 3px 0;
+  }
+  .list-item.overdue{ border-left-color:var(--red); }
+  .list-item.repairing{ border-left-color:var(--amber); }
+  .list-item-title{ font-size:13.5px; font-weight:500; }
+  .list-item-meta{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+  .empty-note{ color:var(--muted-2); font-size:12.5px; padding:6px 0; }
+
+  /* ---------- Toolbar / filters ---------- */
+  .toolbar{ display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+  .toolbar input[type=text]{ min-width:200px; flex:1; }
+  .toolbar select{ min-width:120px; }
+  .spacer{ flex:1; }
+
+  /* ---------- Equipment table ---------- */
+  .eq-row{
+    display:grid;
+    grid-template-columns: 18px 2fr 1fr 0.7fr 1.6fr auto;
+    gap:12px; align-items:center;
+    padding:12px 8px;
+    border-bottom:1px solid var(--border);
+  }
+  .eq-row.head{ color:var(--muted); font-size:11.5px; padding-bottom:8px; }
+  .eq-row:last-child{ border-bottom:none; }
+  .status-dot{ width:9px; height:9px; border-radius:50%; }
+  .eq-name{ font-size:13.5px; font-weight:500; }
+  .eq-asset{ font-size:11px; color:var(--muted-2); margin-top:2px; }
+  .eq-note{ font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .row-actions{ display:flex; gap:6px; }
+  .status-tag{
+    display:inline-block; font-size:11px; padding:2px 8px; border-radius:10px;
+    border:1px solid var(--border);
+  }
+
+  /* ---------- Form panel ---------- */
+  .form-panel{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:4px;
+    padding:18px; margin-bottom:20px;
+  }
+  .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; }
+  .form-grid .full{ grid-column:1 / -1; }
+  .form-actions{ display:flex; gap:10px; margin-top:6px; }
+
+  /* ---------- Action segmented control ---------- */
+  .segmented{ display:flex; gap:2px; margin-bottom:20px; border:1px solid var(--border); border-radius:4px; overflow:hidden; width:fit-content; }
+  .segmented button{
+    background:var(--panel-2); border:none; color:var(--muted); padding:10px 18px;
+    font-size:13px; cursor:pointer; font-family:inherit; border-right:1px solid var(--border);
+  }
+  .segmented button:last-child{ border-right:none; }
+  .segmented button.active{ background:var(--panel); color:var(--text); }
+  .segmented button.act-borrow.active{ box-shadow:inset 0 -3px 0 var(--red); }
+  .segmented button.act-return.active{ box-shadow:inset 0 -3px 0 var(--green); }
+  .segmented button.act-repair_out.active{ box-shadow:inset 0 -3px 0 var(--amber); }
+  .segmented button.act-repair_in.active{ box-shadow:inset 0 -3px 0 var(--amber); }
+
+  .info-box{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:3px;
+    padding:12px 14px; margin-bottom:14px; font-size:12.5px; color:var(--muted);
+  }
+  .info-box b{ color:var(--text); font-weight:500; }
+
+  /* ---------- Log ---------- */
+  .log-item{ display:flex; gap:12px; padding:12px 4px; border-bottom:1px solid var(--border); }
+  .log-item:last-child{ border-bottom:none; }
+  .log-dot{ width:9px; height:9px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+  .log-main{ flex:1; }
+  .log-top{ display:flex; justify-content:space-between; gap:10px; }
+  .log-title{ font-size:13.5px; }
+  .log-title b{ font-weight:600; }
+  .log-time{ font-size:11px; color:var(--muted-2); white-space:nowrap; }
+  .log-detail{ font-size:12px; color:var(--muted); margin-top:3px; }
+
+  /* ---------- Toast ---------- */
+  #toast{
+    position:fixed; bottom:20px; right:20px; z-index:50;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .toast-msg{
+    background:var(--panel-2); border:1px solid var(--red); color:var(--text);
+    padding:10px 16px; border-radius:3px; font-size:13px; max-width:320px;
+    border-left:3px solid var(--red);
+  }
+
+  .loading-note{ color:var(--muted); font-size:13px; padding:40px; text-align:center; }
+
+  @media (max-width: 720px){
+    .stat-grid{ grid-template-columns:repeat(2,1fr); }
+    .dash-cols{ grid-template-columns:1fr; }
+    .eq-row{ grid-template-columns: 14px 1fr auto; }
+    .eq-row .col-cat, .eq-row .col-qty, .eq-row .col-note{ display:none; }
+    .form-grid{ grid-template-columns:1fr; }
+  }
+
+  :focus-visible{ outline:2px solid var(--focus); outline-offset:1px; }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-tag"><span class="dot" style="background:var(--green)"></span>系統狀態正常</div>
+    <h1>攝影器材管控台</h1>
+    <p class="sub">輸入姓名以登入。所有人共用同一份器材資料庫,借出、歸還與送修都會記錄經手人。</p>
+    <div class="field">
+      <label for="login-name">你的姓名</label>
+      <input id="login-name" type="text" placeholder="例如:陳志明" maxlength="20">
+    </div>
+    <button class="btn btn-primary btn-full" id="login-btn">登入系統</button>
+    <div class="note">資料儲存在共用雲端,團隊所有成員登入後都會看到相同的器材清單與紀錄。</div>
+  </div>
+</div>
+
+<div id="app-shell">
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot" style="background:var(--red)"></span>
+      <div>
+        <h1>攝影器材管控台</h1>
+        <div class="brand-sub">共用資料庫,所有異動都會記錄經手人</div>
+      </div>
+    </div>
+    <div class="user-chip">
+      <div class="user-badge">目前使用者:<span id="current-user-name"></span></div>
+      <button class="btn btn-sm btn-ghost" id="switch-user-btn">切換使用者</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="dashboard">儀表板</button>
+    <button data-tab="equipment">器材清單</button>
+    <button data-tab="transactions">借還作業</button>
+    <button data-tab="log">操作紀錄</button>
+  </nav>
+
+  <main id="main-content">
+    <div class="loading-note">載入器材資料中…</div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+
+  var CATEGORIES = ['攝影機','鏡頭','腳架/穩定器','燈光','收音','線材/轉接','其他'];
+
+  var STATUS_META = {
+    in_stock: { label:'在庫', color:'var(--green)' },
+    borrowed: { label:'借出中', color:'var(--red)' },
+    repair:   { label:'送修中', color:'var(--amber)' },
+    retired:  { label:'報廢', color:'var(--grey-status)' }
+  };
+
+  var ACTION_META = {
+    add:        { label:'新增器材', color:'var(--focus)' },
+    borrow:     { label:'借出', color:'var(--red)' },
+    return:     { label:'歸還', color:'var(--green)' },
+    repair_out: { label:'送修', color:'var(--amber)' },
+    repair_in:  { label:'完修歸庫', color:'var(--amber)' },
+    retire:     { label:'報廢', color:'var(--grey-status)' },
+    edit:       { label:'編輯資料', color:'var(--focus)' }
+  };
+
+  var state = {
+    currentUser: null,
+    equipment: [],
+    records: [],
+    loading: true,
+    activeTab: 'dashboard',
+    eqSearch: '',
+    eqCatFilter: '',
+    eqStatusFilter: '',
+    editingId: null,
+    txAction: 'borrow',
+    logSearch: ''
+  };
+
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function genId(prefix){ return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function escapeHtml(s){
+    if(s === undefined || s === null) return '';
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function fmtDate(d){ return d ? d : '—'; }
+  function nowIso(){ return new Date().toISOString(); }
+  function fmtTimestamp(iso){
+    try{
+      var d = new Date(iso);
+      return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    }catch(e){ return iso; }
+  }
+
+  function showToast(msg){
+    var el = document.createElement('div');
+    el.className = 'toast-msg';
+    el.textContent = msg;
+    document.getElementById('toast').appendChild(el);
+    setTimeout(function(){ el.remove(); }, 5000);
+  }
+
+  // ---------------- storage ----------------
+  async function loadAll(){
+    state.loading = true;
+    try{
+      var eqRes = await window.storage.get('equipment-list', true);
+      state.equipment = eqRes ? JSON.parse(eqRes.value) : [];
+    }catch(e){ state.equipment = []; }
+    try{
+      var recRes = await window.storage.get('records-log', true);
+      state.records = recRes ? JSON.parse(recRes.value) : [];
+    }catch(e){ state.records = []; }
+    state.loading = false;
+    render();
+  }
+
+  async function persistEquipment(){
+    try{
+      var res = await window.storage.set('equipment-list', JSON.stringify(state.equipment), true);
+      if(!res) showToast('儲存器材資料失敗,請重試一次');
+    }catch(e){ showToast('儲存器材資料失敗:' + e.message); }
+  }
+  async function persistRecords(){
+    try{
+      var res = await window.storage.set('records-log', JSON.stringify(state.records), true);
+      if(!res) showToast('儲存紀錄失敗,請重試一次');
+    }catch(e){ showToast('儲存紀錄失敗:' + e.message); }
+  }
+
+  function addRecord(rec){
+    rec.id = genId('rec');
+    rec.timestamp = nowIso();
+    rec.handledBy = state.currentUser;
+    state.records.unshift(rec);
+    persistRecords();
+  }
+
+  // ---------------- login ----------------
+  document.getElementById('login-btn').addEventListener('click', doLogin);
+  document.getElementById('login-name').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') doLogin();
+  });
+  function doLogin(){
+    var val = document.getElementById('login-name').value.trim();
+    if(!val){ showToast('請輸入姓名'); return; }
+    state.currentUser = val;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-shell').style.display = 'flex';
+    document.getElementById('current-user-name').textContent = val;
+    loadAll();
+  }
+  document.getElementById('switch-user-btn').addEventListener('click', function(){
+    state.currentUser = null;
+    document.getElementById('login-name').value = '';
+    document.getElementById('app-shell').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  });
+
+  setupDelegatedEvents();
+
+  // ---------------- tabs ----------------
+  document.getElementById('tabs').addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-tab]');
+    if(!btn) return;
+    state.activeTab = btn.getAttribute('data-tab');
+    state.editingId = null;
+    render();
+  });
+
+  // ---------------- render root ----------------
+  function render(){
+    renderTabs();
+    var main = document.getElementById('main-content');
+    if(state.loading){
+      main.innerHTML = '<div class="loading-note">載入器材資料中…</div>';
+      return;
+    }
+    if(state.activeTab === 'dashboard') main.innerHTML = renderDashboard();
+    else if(state.activeTab === 'equipment') main.innerHTML = renderEquipmentTab();
+    else if(state.activeTab === 'transactions') main.innerHTML = renderTransactionsTab();
+    else if(state.activeTab === 'log') main.innerHTML = renderLogTab();
+  }
+
+  function renderTabs(){
+    var btns = document.querySelectorAll('#tabs button');
+    btns.forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-tab') === state.activeTab);
+    });
+  }
+
+  // ---------------- dashboard ----------------
+  function renderDashboard(){
+    var eq = state.equipment;
+    var total = eq.length;
+    var inStock = eq.filter(function(x){ return x.status === 'in_stock'; }).length;
+    var borrowed = eq.filter(function(x){ return x.status === 'borrowed'; }).length;
+    var repairing = eq.filter(function(x){ return x.status === 'repair'; }).length;
+
+    var catCounts = {};
+    CATEGORIES.forEach(function(c){ catCounts[c] = 0; });
+    eq.forEach(function(x){ if(catCounts[x.category] !== undefined) catCounts[x.category]++; });
+    var maxCat = Math.max.apply(null, Object.values(catCounts).concat([1]));
+
+    var today = todayStr();
+    var overdue = eq.filter(function(x){
+      return x.status === 'borrowed' && x.activeRecord && x.activeRecord.expectedReturnDate && x.activeRecord.expectedReturnDate < today;
+    });
+    var repairList = eq.filter(function(x){ return x.status === 'repair'; });
+
+    var html = '';
+    html += '<div class="stat-grid">';
+    html += '<div class="stat-tile total"><div class="stat-num mono">' + total + '</div><div class="stat-label">總器材數</div></div>';
+    html += '<div class="stat-tile in-stock"><div class="stat-num mono">' + inStock + '</div><div class="stat-label">在庫</div></div>';
+    html += '<div class="stat-tile borrowed"><div class="stat-num mono">' + borrowed + '</div><div class="stat-label">借出中</div></div>';
+    html += '<div class="stat-tile repair"><div class="stat-num mono">' + repairing + '</div><div class="stat-label">送修中</div></div>';
+    html += '</div>';
+
+    html += '<div class="panel" style="margin-bottom:16px;">';
+    html += '<h2 class="section-title">各類別器材數量</h2>';
+    html += '<div class="cat-bars">';
+    CATEGORIES.forEach(function(c){
+      var count = catCounts[c];
+      var pct = Math.round((count / maxCat) * 100);
+      html += '<div class="cat-row"><div class="cat-name">' + escapeHtml(c) + '</div><div class="cat-track"><div class="cat-fill" style="width:' + pct + '%"></div></div><div class="cat-count mono">' + count + '</div></div>';
+    });
+    html += '</div></div>';
+
+    html += '<div class="dash-cols">';
+
+    html += '<div class="panel"><h2 class="section-title">逾期未還</h2>';
+    if(overdue.length === 0){
+      html += '<div class="empty-note">目前沒有逾期未還的器材。</div>';
+    }else{
+      overdue.forEach(function(x){
+        html += '<div class="list-item overdue"><div class="list-item-title">' + escapeHtml(x.name) + '</div><div class="list-item-meta">借用人:' + escapeHtml(x.activeRecord.person) + ' · 預計歸還:<span class="mono">' + fmtDate(x.activeRecord.expectedReturnDate) + '</span></div></div>';
+      });
+    }
+    html += '</div>';
+
+    html += '<div class="panel"><h2 class="section-title">送修中</h2>';
+    if(repairList.length === 0){
+      html += '<div class="empty-note">目前沒有送修中的器材。</div>';
+    }else{
+      repairList.forEach(function(x){
+        var er = x.activeRecord || {};
+        html += '<div class="list-item repairing"><div class="list-item-title">' + escapeHtml(x.name) + '</div><div class="list-item-meta">送修日期:<span class="mono">' + fmtDate(er.repairDate) + '</span> · 預計取回:<span class="mono">' + fmtDate(er.expectedBackDate) + '</span></div></div>';
+      });
+    }
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  // ---------------- equipment tab ----------------
+  function filteredEquipment(){
+    return state.equipment.filter(function(x){
+      if(state.eqSearch && x.name.toLowerCase().indexOf(state.eqSearch.toLowerCase()) === -1 && (x.assetNo||'').toLowerCase().indexOf(state.eqSearch.toLowerCase()) === -1) return false;
+      if(state.eqCatFilter && x.category !== state.eqCatFilter) return false;
+      if(state.eqStatusFilter && x.status !== state.eqStatusFilter) return false;
+      return true;
+    });
+  }
+
+  function renderEquipmentTab(){
+    var html = '';
+    html += '<div class="toolbar">';
+    html += '<input type="text" id="eq-search" placeholder="搜尋名稱或資產編號" value="' + escapeHtml(state.eqSearch) + '">';
+    html += '<select id="eq-cat-filter"><option value="">全部類別</option>' + CATEGORIES.map(function(c){ return '<option value="'+escapeHtml(c)+'"'+(state.eqCatFilter===c?' selected':'')+'>'+escapeHtml(c)+'</option>'; }).join('') + '</select>';
+    html += '<select id="eq-status-filter"><option value="">全部狀態</option>' + Object.keys(STATUS_META).map(function(s){ return '<option value="'+s+'"'+(state.eqStatusFilter===s?' selected':'')+'>'+STATUS_META[s].label+'</option>'; }).join('') + '</select>';
+    html += '<span class="spacer"></span>';
+    html += '<button type="button" class="btn btn-primary btn-sm" data-action="add-eq">+ 新增器材</button>';
+    html += '</div>';
+
+    if(state.editingId !== null){
+      html += renderEquipmentForm();
+    }
+
+    var list = filteredEquipment();
+    html += '<div class="panel">';
+    html += '<div class="eq-row head"><div></div><div>名稱 / 資產編號</div><div class="col-cat">類別</div><div class="col-qty">數量</div><div class="col-note">用途 / 備註</div><div>操作</div></div>';
+    if(list.length === 0){
+      html += '<div class="empty-note" style="padding:16px 8px;">沒有符合條件的器材。</div>';
+    }else{
+      list.forEach(function(x){
+        var meta = STATUS_META[x.status];
+        html += '<div class="eq-row">';
+        html += '<div class="status-dot" style="background:'+meta.color+'"></div>';
+        html += '<div><div class="eq-name">'+escapeHtml(x.name)+'</div><div class="eq-asset mono">'+escapeHtml(x.assetNo || '無編號')+'</div></div>';
+        html += '<div class="col-cat" style="font-size:12.5px;color:var(--muted)">'+escapeHtml(x.category)+'</div>';
+        html += '<div class="col-qty mono" style="font-size:12.5px;">'+escapeHtml(x.quantity)+'</div>';
+        html += '<div class="col-note eq-note" title="'+escapeHtml(x.note||'')+'">'+escapeHtml(x.note || '—')+'</div>';
+        html += '<div class="row-actions">';
+        html += '<button class="btn btn-sm btn-ghost" data-action="edit-eq" data-id="'+x.id+'">編輯</button>';
+        if(x.status !== 'retired'){
+          html += '<button class="btn btn-sm btn-ghost" data-action="retire-eq" data-id="'+x.id+'">報廢</button>';
+        }
+        html += '<button class="btn btn-sm btn-ghost" data-action="delete-eq" data-id="'+x.id+'">刪除</button>';
+        html += '</div></div>';
+      });
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderEquipmentForm(){
+    var editing = state.editingId !== 'new' ? state.equipment.find(function(x){ return x.id === state.editingId; }) : null;
+    var v = editing || { name:'', category:CATEGORIES[0], assetNo:'', quantity:1, note:'' };
+    var title = editing ? '編輯器材' : '新增器材';
+    var html = '<div class="form-panel">';
+    html += '<h2 class="section-title">'+title+'</h2>';
+    html += '<div id="eq-form">';
+    html += '<div class="form-grid">';
+    html += '<div class="field"><label>器材名稱</label><input type="text" name="name" value="'+escapeHtml(v.name)+'" placeholder="例如:Sony FX6 攝影機"></div>';
+    html += '<div class="field"><label>類別</label><select name="category">' + CATEGORIES.map(function(c){ return '<option value="'+escapeHtml(c)+'"'+(v.category===c?' selected':'')+'>'+escapeHtml(c)+'</option>'; }).join('') + '</select></div>';
+    html += '<div class="field"><label>資產編號(選填)</label><input type="text" name="assetNo" value="'+escapeHtml(v.assetNo)+'" placeholder="例如:CAM-014"></div>';
+    html += '<div class="field"><label>數量</label><input type="number" name="quantity" min="1" value="'+escapeHtml(v.quantity)+'"></div>';
+    html += '<div class="field full"><label>用途 / 備註</label><input type="text" name="note" value="'+escapeHtml(v.note||'')+'" placeholder="例如:主要用於棚內新聞節目"></div>';
+    html += '</div>';
+    html += '<div class="form-actions">';
+    html += '<button type="button" class="btn btn-primary" data-action="save-eq">儲存</button>';
+    html += '<button type="button" class="btn btn-ghost" data-action="cancel-eq-form">取消</button>';
+    html += '</div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  // ---------------- transactions tab ----------------
+  function renderTransactionsTab(){
+    var html = '';
+    html += '<div class="segmented">';
+    [['borrow','借出'],['return','歸還'],['repair_out','送修'],['repair_in','完修歸庫']].forEach(function(pair){
+      html += '<button class="act-'+pair[0]+(state.txAction===pair[0]?' active':'')+'" data-action="set-tx" data-tx="'+pair[0]+'">'+pair[1]+'</button>';
+    });
+    html += '</div>';
+
+    if(state.txAction === 'borrow') html += renderBorrowForm();
+    else if(state.txAction === 'return') html += renderReturnForm();
+    else if(state.txAction === 'repair_out') html += renderRepairOutForm();
+    else if(state.txAction === 'repair_in') html += renderRepairInForm();
+
+    return html;
+  }
+
+  function eligibleFor(action){
+    if(action === 'borrow') return state.equipment.filter(function(x){ return x.status === 'in_stock'; });
+    if(action === 'return') return state.equipment.filter(function(x){ return x.status === 'borrowed'; });
+    if(action === 'repair_out') return state.equipment.filter(function(x){ return x.status === 'in_stock' || x.status === 'borrowed'; });
+    if(action === 'repair_in') return state.equipment.filter(function(x){ return x.status === 'repair'; });
+    return [];
+  }
+
+  function selectOptions(list){
+    if(list.length === 0) return '<option value="">— 無符合條件的器材 —</option>';
+    return '<option value="">請選擇器材</option>' + list.map(function(x){ return '<option value="'+x.id+'">'+escapeHtml(x.name)+(x.assetNo ? ' ('+escapeHtml(x.assetNo)+')' : '')+'</option>'; }).join('');
+  }
+
+  function renderBorrowForm(){
+    var list = eligibleFor('borrow');
+    var html = '<div class="panel"><h2 class="section-title">登記借出</h2>';
+    html += '<div id="tx-form" data-tx-action="borrow">';
+    html += '<div class="form-grid">';
+    html += '<div class="field full"><label>選擇器材</label><select name="equipmentId">'+selectOptions(list)+'</select></div>';
+    html += '<div class="field"><label>借用人</label><input type="text" name="person" value="'+escapeHtml(state.currentUser)+'"></div>';
+    html += '<div class="field"><label>所屬節目 / 部門</label><input type="text" name="program" placeholder="例如:晚間新聞"></div>';
+    html += '<div class="field"><label>借用日期</label><input type="date" name="borrowDate" value="'+todayStr()+'"></div>';
+    html += '<div class="field"><label>預計歸還日期</label><input type="date" name="expectedReturnDate"></div>';
+    html += '<div class="field full"><label>用途 / 備註</label><input type="text" name="note" placeholder="例如:外景拍攝使用"></div>';
+    html += '</div>';
+    html += '<div class="form-actions"><button type="button" class="btn btn-primary" data-action="submit-tx">登記借出</button></div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  function renderReturnForm(){
+    var list = eligibleFor('return');
+    var html = '<div class="panel"><h2 class="section-title">登記歸還</h2>';
+    html += '<div id="tx-form" data-tx-action="return">';
+    html += '<div class="form-grid">';
+    html += '<div class="field full"><label>選擇器材</label><select name="equipmentId" id="return-select">'+selectOptions(list)+'</select></div>';
+    html += '</div>';
+    html += '<div id="return-info"></div>';
+    html += '<div class="form-grid">';
+    html += '<div class="field"><label>實際歸還日期</label><input type="date" name="actualReturnDate" value="'+todayStr()+'"></div>';
+    html += '<div class="field full"><label>備註(器材狀況說明)</label><input type="text" name="note" placeholder="例如:功能正常,已檢查"></div>';
+    html += '</div>';
+    html += '<div class="form-actions"><button type="button" class="btn btn-primary" data-action="submit-tx">登記歸還</button></div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  function renderRepairOutForm(){
+    var list = eligibleFor('repair_out');
+    var html = '<div class="panel"><h2 class="section-title">登記送修</h2>';
+    html += '<div id="tx-form" data-tx-action="repair_out">';
+    html += '<div class="form-grid">';
+    html += '<div class="field full"><label>選擇器材</label><select name="equipmentId">'+selectOptions(list)+'</select></div>';
+    html += '<div class="field"><label>送修日期</label><input type="date" name="repairDate" value="'+todayStr()+'"></div>';
+    html += '<div class="field"><label>預計取回日期</label><input type="date" name="expectedBackDate"></div>';
+    html += '<div class="field full"><label>送修原因</label><input type="text" name="reason" placeholder="例如:鏡頭對焦異常"></div>';
+    html += '<div class="field full"><label>送修廠商 / 備註</label><input type="text" name="note" placeholder="例如:送原廠維修中心"></div>';
+    html += '</div>';
+    html += '<div class="form-actions"><button type="button" class="btn btn-primary" data-action="submit-tx">登記送修</button></div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  function renderRepairInForm(){
+    var list = eligibleFor('repair_in');
+    var html = '<div class="panel"><h2 class="section-title">登記完修歸庫</h2>';
+    html += '<div id="tx-form" data-tx-action="repair_in">';
+    html += '<div class="form-grid">';
+    html += '<div class="field full"><label>選擇器材</label><select name="equipmentId" id="repairin-select">'+selectOptions(list)+'</select></div>';
+    html += '</div>';
+    html += '<div id="repairin-info"></div>';
+    html += '<div class="form-grid">';
+    html += '<div class="field"><label>取回日期</label><input type="date" name="backDate" value="'+todayStr()+'"></div>';
+    html += '<div class="field full"><label>維修結果備註</label><input type="text" name="note" placeholder="例如:已更換零件,測試正常"></div>';
+    html += '</div>';
+    html += '<div class="form-actions"><button type="button" class="btn btn-primary" data-action="submit-tx">登記完修歸庫</button></div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  // ---------------- log tab ----------------
+  function renderLogTab(){
+    var html = '';
+    html += '<div class="toolbar"><input type="text" id="log-search" placeholder="搜尋器材名稱或經手人" value="'+escapeHtml(state.logSearch)+'"></div>';
+    var records = state.records.filter(function(r){
+      if(!state.logSearch) return true;
+      var q = state.logSearch.toLowerCase();
+      return (r.equipmentName||'').toLowerCase().indexOf(q) !== -1 || (r.handledBy||'').toLowerCase().indexOf(q) !== -1 || (r.person||'').toLowerCase().indexOf(q) !== -1;
+    });
+    html += '<div class="panel">';
+    if(records.length === 0){
+      html += '<div class="empty-note">目前沒有紀錄。</div>';
+    }else{
+      records.forEach(function(r){
+        var meta = ACTION_META[r.action] || { label:r.action, color:'var(--muted)' };
+        html += '<div class="log-item">';
+        html += '<div class="log-dot" style="background:'+meta.color+'"></div>';
+        html += '<div class="log-main">';
+        html += '<div class="log-top"><div class="log-title"><b>'+escapeHtml(r.equipmentName)+'</b> — '+meta.label+'</div><div class="log-time mono">'+fmtTimestamp(r.timestamp)+'</div></div>';
+        html += '<div class="log-detail">' + renderLogDetail(r) + ' · 經手人:' + escapeHtml(r.handledBy) + '</div>';
+        html += '</div></div>';
+      });
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderLogDetail(r){
+    if(r.action === 'borrow') return '借用人:' + escapeHtml(r.person) + (r.program ? '(' + escapeHtml(r.program) + ')' : '') + ' · 預計歸還:' + fmtDate(r.expectedReturnDate);
+    if(r.action === 'return') return '實際歸還:' + fmtDate(r.actualReturnDate) + (r.note ? ' · ' + escapeHtml(r.note) : '');
+    if(r.action === 'repair_out') return '原因:' + escapeHtml(r.reason || '—') + ' · 預計取回:' + fmtDate(r.expectedBackDate);
+    if(r.action === 'repair_in') return '取回日期:' + fmtDate(r.backDate) + (r.note ? ' · ' + escapeHtml(r.note) : '');
+    if(r.action === 'add') return '新增至器材清單';
+    if(r.action === 'retire') return '標記為報廢';
+    return r.note ? escapeHtml(r.note) : '';
+  }
+
+  // ---------------- event delegation for content ----------------
+  // Bound ONCE on the persistent #main-content element, rather than re-attached
+  // on every render, so behaviour never depends on how many times a tab has
+  // been redrawn and forms can never end up with stale or duplicate handlers.
+  function setupDelegatedEvents(){
+    var main = document.getElementById('main-content');
+
+    main.addEventListener('click', onContentClick);
+
+    main.addEventListener('input', function(e){
+      var id = e.target.id;
+      if(id === 'eq-search'){ state.eqSearch = e.target.value; renderEquipmentTabOnly(); }
+      else if(id === 'log-search'){ state.logSearch = e.target.value; render(); }
+    });
+
+    main.addEventListener('change', function(e){
+      var id = e.target.id;
+      if(id === 'eq-cat-filter'){ state.eqCatFilter = e.target.value; render(); }
+      else if(id === 'eq-status-filter'){ state.eqStatusFilter = e.target.value; render(); }
+      else if(id === 'return-select'){ updateReturnInfo(e.target.value); }
+      else if(id === 'repairin-select'){ updateRepairInInfo(e.target.value); }
+    });
+  }
+
+  function renderEquipmentTabOnly(){
+    // lightweight re-render preserving focus/caret in the search box across keystrokes
+    var main = document.getElementById('main-content');
+    var focusWasSearch = document.activeElement && document.activeElement.id === 'eq-search';
+    var caret = focusWasSearch ? document.activeElement.selectionStart : null;
+    main.innerHTML = renderEquipmentTab();
+    if(focusWasSearch){
+      var el = document.getElementById('eq-search');
+      if(el){ el.focus(); if(caret!==null) el.setSelectionRange(caret, caret); }
+    }
+  }
+
+  function onContentClick(e){
+    var t = e.target.closest('[data-action]');
+    if(!t) return;
+    var action = t.getAttribute('data-action');
+    var id = t.getAttribute('data-id');
+
+    if(action === 'add-eq'){ state.editingId = 'new'; render(); }
+    else if(action === 'edit-eq'){ state.editingId = id; render(); }
+    else if(action === 'cancel-eq-form'){ state.editingId = null; render(); }
+    else if(action === 'retire-eq'){ retireEquipment(id); }
+    else if(action === 'delete-eq'){ deleteEquipment(id); }
+    else if(action === 'set-tx'){ state.txAction = t.getAttribute('data-tx'); render(); }
+    else if(action === 'save-eq'){ onEquipmentFormSubmit(); }
+    else if(action === 'submit-tx'){ onTxFormSubmit(); }
+  }
+
+  function updateReturnInfo(eqId){
+    var box = document.getElementById('return-info');
+    if(!box) return;
+    var eq = state.equipment.find(function(x){ return x.id === eqId; });
+    if(!eq || !eq.activeRecord){ box.innerHTML = ''; return; }
+    var ar = eq.activeRecord;
+    box.innerHTML = '<div class="info-box">借用人:<b>'+escapeHtml(ar.person)+'</b> · 借用日期:<b>'+fmtDate(ar.borrowDate)+'</b> · 預計歸還:<b>'+fmtDate(ar.expectedReturnDate)+'</b>' + (ar.program ? ' · 節目:<b>'+escapeHtml(ar.program)+'</b>' : '') + '</div>';
+  }
+  function updateRepairInInfo(eqId){
+    var box = document.getElementById('repairin-info');
+    if(!box) return;
+    var eq = state.equipment.find(function(x){ return x.id === eqId; });
+    if(!eq || !eq.activeRecord){ box.innerHTML = ''; return; }
+    var ar = eq.activeRecord;
+    box.innerHTML = '<div class="info-box">送修原因:<b>'+escapeHtml(ar.reason||'—')+'</b> · 送修日期:<b>'+fmtDate(ar.repairDate)+'</b> · 預計取回:<b>'+fmtDate(ar.expectedBackDate)+'</b></div>';
+  }
+
+  // ---------------- form submit handlers ----------------
+  function fieldVal(container, name){
+    var el = container.querySelector('[name="'+name+'"]');
+    return el ? el.value : '';
+  }
+
+  function onEquipmentFormSubmit(){
+    var container = document.getElementById('eq-form');
+    if(!container) return;
+    var name = fieldVal(container, 'name').trim();
+    if(!name){ showToast('請輸入器材名稱'); return; }
+    var qty = parseInt(fieldVal(container, 'quantity'), 10);
+    if(isNaN(qty) || qty < 1) qty = 1;
+    var category = fieldVal(container, 'category');
+    var assetNo = fieldVal(container, 'assetNo').trim();
+    var note = fieldVal(container, 'note').trim();
+
+    if(state.editingId === 'new'){
+      var newEq = {
+        id: genId('eq'),
+        name: name,
+        category: category,
+        assetNo: assetNo,
+        quantity: qty,
+        note: note,
+        status: 'in_stock',
+        activeRecord: null,
+        createdAt: nowIso()
+      };
+      state.equipment.unshift(newEq);
+      addRecord({ equipmentId:newEq.id, equipmentName:newEq.name, action:'add' });
+    }else{
+      var eq = state.equipment.find(function(x){ return x.id === state.editingId; });
+      if(eq){
+        eq.name = name;
+        eq.category = category;
+        eq.assetNo = assetNo;
+        eq.quantity = qty;
+        eq.note = note;
+        addRecord({ equipmentId:eq.id, equipmentName:eq.name, action:'edit' });
+      }
+    }
+    persistEquipment();
+    state.editingId = null;
+    render();
+  }
+
+  function retireEquipment(id){
+    var eq = state.equipment.find(function(x){ return x.id === id; });
+    if(!eq) return;
+    if(!confirm('確定要將「'+eq.name+'」標記為報廢嗎?')) return;
+    eq.status = 'retired';
+    eq.activeRecord = null;
+    addRecord({ equipmentId:eq.id, equipmentName:eq.name, action:'retire' });
+    persistEquipment();
+    render();
+  }
+
+  function deleteEquipment(id){
+    var eq = state.equipment.find(function(x){ return x.id === id; });
+    if(!eq) return;
+    if(!confirm('確定要永久刪除「'+eq.name+'」嗎?此動作無法復原。')) return;
+    addRecord({ equipmentId:eq.id, equipmentName:eq.name, action:'delete', note:'器材已從清單中移除' });
+    state.equipment = state.equipment.filter(function(x){ return x.id !== id; });
+    persistEquipment();
+    render();
+  }
+
+  function onTxFormSubmit(){
+    var container = document.getElementById('tx-form');
+    if(!container) return;
+    var action = container.getAttribute('data-tx-action');
+    var eqId = fieldVal(container, 'equipmentId');
+    if(!eqId){ showToast('請選擇器材'); return; }
+    var eq = state.equipment.find(function(x){ return x.id === eqId; });
+    if(!eq){ showToast('找不到這項器材'); return; }
+
+    if(action === 'borrow'){
+      var person = fieldVal(container, 'person').trim();
+      var expectedReturnDate = fieldVal(container, 'expectedReturnDate');
+      if(!person || !expectedReturnDate){ showToast('請填寫借用人與預計歸還日期'); return; }
+      eq.status = 'borrowed';
+      eq.activeRecord = {
+        person: person,
+        program: fieldVal(container, 'program').trim(),
+        borrowDate: fieldVal(container, 'borrowDate') || todayStr(),
+        expectedReturnDate: expectedReturnDate,
+        note: fieldVal(container, 'note').trim()
+      };
+      addRecord({
+        equipmentId: eq.id, equipmentName: eq.name, action:'borrow',
+        person: person, program: eq.activeRecord.program,
+        borrowDate: eq.activeRecord.borrowDate, expectedReturnDate: expectedReturnDate,
+        note: eq.activeRecord.note
+      });
+      showToast('已登記借出:' + eq.name);
+    }
+    else if(action === 'return'){
+      var actualReturnDate = fieldVal(container, 'actualReturnDate') || todayStr();
+      var note = fieldVal(container, 'note').trim();
+      var priorInfo = eq.activeRecord || {};
+      eq.status = 'in_stock';
+      eq.activeRecord = null;
+      addRecord({
+        equipmentId: eq.id, equipmentName: eq.name, action:'return',
+        person: priorInfo.person, program: priorInfo.program,
+        actualReturnDate: actualReturnDate, note: note
+      });
+      showToast('已登記歸還:' + eq.name);
+    }
+    else if(action === 'repair_out'){
+      var reason = fieldVal(container, 'reason').trim();
+      if(!reason){ showToast('請填寫送修原因'); return; }
+      eq.status = 'repair';
+      eq.activeRecord = {
+        reason: reason,
+        repairDate: fieldVal(container, 'repairDate') || todayStr(),
+        expectedBackDate: fieldVal(container, 'expectedBackDate') || '',
+        note: fieldVal(container, 'note').trim()
+      };
+      addRecord({
+        equipmentId: eq.id, equipmentName: eq.name, action:'repair_out',
+        reason: reason, repairDate: eq.activeRecord.repairDate,
+        expectedBackDate: eq.activeRecord.expectedBackDate, note: eq.activeRecord.note
+      });
+      showToast('已登記送修:' + eq.name);
+    }
+    else if(action === 'repair_in'){
+      var backDate = fieldVal(container, 'backDate') || todayStr();
+      var rnote = fieldVal(container, 'note').trim();
+      eq.status = 'in_stock';
+      eq.activeRecord = null;
+      addRecord({
+        equipmentId: eq.id, equipmentName: eq.name, action:'repair_in',
+        backDate: backDate, note: rnote
+      });
+      showToast('已登記完修歸庫:' + eq.name);
+    }
+
+    persistEquipment();
+    render();
+  }
+
+})();
+</script>
+</body>
+</html>
